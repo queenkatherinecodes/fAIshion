@@ -14,21 +14,22 @@
    - [x] Create main application directory structure:
      ```
      fAIshion/
-   ├── alembic/
-   │   ├── env.py                # Alembic environment config for migrations
-   │   ├── README                # (Optional) Alembic notes
-   │   └── versions/             # This folder will contain migration scripts
-   ├── app/
-   │   ├── __init__.py
-   │   ├── main.py               # FastAPI entry point with CORS and health-check
-   │   ├── config.py             # Application settings (loads .env)
-   │   ├── database.py           # Database connection and session dependency
-   │   └── models/
-   │       └── __init__.py       # SQLAlchemy models: User, WardrobeItem,  Outfit
-   ├── tests/
-   │   └── __init__.py
-   ├── requirements.txt
-   └── .env
+├── alembic/
+│   ├── env.py                # Alembic environment config for migrations
+│   ├── README                # (Optional) Alembic notes
+│   └── versions/             # This folder will contain migration scripts
+├── app/
+│   ├── __init__.py
+│   ├── main.py               # FastAPI entry point with CORS and health-check
+│   ├── config.py             # Application settings (loads .env)
+│   ├── database.py           # Database connection and session dependency
+│   └── models/
+│       └── __init__.py       # SQLAlchemy models: User, WardrobeItem, Outfit
+├── tests/
+│   └── __init__.py
+├── requirements.txt
+└── .env
+
      ```
 
 3. Database Setup
