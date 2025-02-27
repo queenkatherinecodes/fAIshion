@@ -7,30 +7,28 @@
    - [x] Initialize git repository
    - [x] Create README.md
    - [x] Create .gitignore for Python
-   - [ ] Set up virtual environment
-   - [ ] Create initial requirements.txt with FastAPI and uvicorn
+   - [x] Set up virtual environment
+   - [x] Create initial requirements.txt with FastAPI and uvicorn
 
 2. Project Structure
-   - [ ] Create main application directory structure:
+   - [x] Create main application directory structure:
      ```
      fAIshion/
-     ├── app/
-     │   ├── __init__.py
-     │   ├── main.py
-     │   ├── database.py
-     │   ├── config.py
-     │   ├── api/
-     │   │   └── __init__.py
-     │   ├── models/
-     │   │   └── __init__.py
-     │   ├── schemas/
-     │   │   └── __init__.py
-     │   └── services/
-     │       └── __init__.py
-     ├── tests/
-     │   └── __init__.py
-     ├── requirements.txt
-     └── .env
+   ├── alembic/
+   │   ├── env.py                # Alembic environment config for migrations
+   │   ├── README                # (Optional) Alembic notes
+   │   └── versions/             # This folder will contain migration scripts
+   ├── app/
+   │   ├── __init__.py
+   │   ├── main.py               # FastAPI entry point with CORS and health-check
+   │   ├── config.py             # Application settings (loads .env)
+   │   ├── database.py           # Database connection and session dependency
+   │   └── models/
+   │       └── __init__.py       # SQLAlchemy models: User, WardrobeItem,  Outfit
+   ├── tests/
+   │   └── __init__.py
+   ├── requirements.txt
+   └── .env
      ```
 
 3. Database Setup
