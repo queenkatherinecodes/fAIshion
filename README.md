@@ -32,19 +32,19 @@
      ```
 
 3. Database Setup
-   - [ ] Create PostgreSQL database locally
-   - [ ] Write SQLAlchemy models for:
-     - [ ] User model
-     - [ ] WardrobeItem model
-     - [ ] Outfit model
-   - [ ] Set up Alembic for migrations
+   - [x] Create PostgreSQL database locally
+   - [x] Write SQLAlchemy models for:
+     - [x] User model
+     - [x] WardrobeItem model
+     - [x] Outfit model
+   - [x] Set up Alembic for migrations
    - [ ] Create initial migration
 
 4. Basic FastAPI Setup
-   - [ ] Create main FastAPI application instance
-   - [ ] Set up database connection
-   - [ ] Add CORS middleware
-   - [ ] Create health check endpoint
+   - [x] Create main FastAPI application instance
+   - [x] Set up database connection
+   - [x] Add CORS middleware
+   - [x] Create health check endpoint
    - [ ] Test server runs locally
 
 ### Phase 2: Authentication
