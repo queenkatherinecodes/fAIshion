@@ -1,0 +1,8 @@
+1. Initialize Alembic:
+In your project root, run: alembic init alembic
+
+2. Create and Apply the Initial Migration
+Generate an initial migration script using:
+alembic revision --autogenerate -m "Initial migration"
+Then apply the migration:
+alembic upgrade head
