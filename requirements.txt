@@ -1,4 +1,4 @@
-fastapi
-uvicorn
-sqlalchemy
-python-dotenv
+fastapi==0.95.0
+uvicorn==0.21.1
+pyodbc==4.0.35
+python-dotenv==1.0.0
