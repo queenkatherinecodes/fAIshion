@@ -21,51 +21,36 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
    - [x] Create initial requirements.txt with FastAPI and uvicorn
 
 2. Project Structure
-   - [x] Create main application directory structure:
-     ```
-     fAIshion/
-     ├── alembic/
-     │   ├── env.py                # Alembic environment config for migrations
-     │   ├── README                # (Optional) Alembic notes
-     │   └── versions/             # This folder will contain migration scripts
-     ├── app/
-     │   ├── __init__.py
-     │   ├── main.py               # FastAPI entry point with CORS and health-check
-     │   ├── config.py             # Application settings (loads .env)
-     │   ├── database.py           # Database connection and session dependency
-     │   └── models/
-     │       └── __init__.py       # SQLAlchemy models: User, WardrobeItem,Outfit
-     ├── tests/
-     │   └── __init__.py
-     ├── requirements.txt
-     └── .env
-     ```
+   - [x] Create main application 
 
 3. Database Setup
-   - [x] Create PostgreSQL database locally
-   - [x] Write SQLAlchemy models for:
-     - [x] User model
-     - [x] WardrobeItem model
-     - [x] Outfit model
-   - [x] Set up Alembic for migrations
-   - [ ] Create initial migration
+   - [x] SQL Database with Azure
 
 4. Basic FastAPI Setup
    - [x] Create main FastAPI application instance
    - [x] Set up database connection
    - [x] Add CORS middleware
    - [x] Create health check endpoint
-   - [ ] Test server runs locally
+   - [x] Test server runs locally
 
-### Phase 2: Authentication
+### Phase 2: DB Setup and Services Scaffolding
 5. User Management
-   - [ ] Create user registration endpoint (POST /api/users)
-   - [ ] Add password hashing
-   - [ ] Create login endpoint (POST /api/auth/login)
-   - [ ] Implement JWT token generation
-   - [ ] Add authentication middleware
-   - [ ] Create protected test endpoint
+   - [ ] Create a table in the SQL database called "Users" with columns: "id", "username", "password"
+   - [ ] Create an endpoint "/register" that accepts POST requests with the body { "username" : exampleUser, "password" : ilovebamba123 } and returns 201 Created if an entry to the Users table was successfully added
+   - [ ] Create an endpoint "/login" that accepts GET requests with the body { "username" : exampleUser, "password" : ilovebamba123 } and returns 200 OK if that user already exists in the Users table of the database; else return 401 unauthorized
+   - [ ] Create Tables for the following clothing items: "Tops", "Bottoms", "Dresses", "Swimsuits", "Shoes", "Accessories", "Miscellaneous" and decide on a scheme for each of them. All should have a unique identifier and include the "userId" from the Users table as a column. 
+   - [ ] Create an endpoint "/api/clothing" that accepts POST requests with body { "userId": $someUserId, "description": "little black dress" } and implement the logic that enters it into its appropriate table
+   - [ ] RESEARCH: how to upload an image in a request similar to the POST request for "/api/clothing" so that we can use images in addition to text descriptions
 
+6. Services Scaffolding
+   - [ ] Create a directory "src/app/services" and add the files weather_service.py, open_ai_service.py, etc. (need to brainstorm what we will be accessing)
+   - [ ] Equipt each service with the necessary API tokens, python packages, etc. so that methods containing logic can easily be added without any set up
+   - [ ] RESEARCH: come up with the WOW factor AI model feature that's more than just a GPT wrapper that is going to be the va va voom of our project
+
+
+
+# EVERYTHING BELOW HERE IS JUST AN AI GENERATED SUGGESTION....
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ### Phase 3: Core Wardrobe Features
 6. Wardrobe Item Management
    - [ ] Create WardrobeItem schema
