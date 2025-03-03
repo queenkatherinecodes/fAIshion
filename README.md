@@ -9,6 +9,7 @@ brew install msodbcsql17 mssql-tools
 
 Once you have download sql tools you can run:
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
 ## Development Roadmap
 
 ### Phase 1: Project Setup
