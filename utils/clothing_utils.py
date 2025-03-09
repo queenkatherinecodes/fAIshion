@@ -1,7 +1,10 @@
 # utils/clothing_utils.py
 import uuid
+import logging  # added import for logging
 from fastapi import HTTPException
 from utils import db_utils
+
+logger = logging.getLogger(__name__)  # initialize logger
 
 def add_clothing_item(user_id: str, description: str, clothing_type: str = None, **kwargs):
     """
@@ -64,6 +67,7 @@ def add_clothing_item(user_id: str, description: str, clothing_type: str = None,
             clothing_type = "Accessories"
         
         conn.commit()
+        logger.info(f"Clothing item added: {item_id} to {clothing_type}")  # added logging
         conn.close()
         
         return {
@@ -73,5 +77,29 @@ def add_clothing_item(user_id: str, description: str, clothing_type: str = None,
         }
     except Exception as e:
         conn.rollback()
+        logger.error(f"Error adding clothing item for user {user_id}: {str(e)}")  # added logging
         conn.close()
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    
+
+def get_all_clothing_descriptions():
+    """
+    Retrieve all clothing item descriptions from all clothing tables.
+    """
+    conn = db_utils.get_db_connection()
+    cursor = conn.cursor()
+    descriptions = []
+    tables = ["Tops", "Bottoms", "Dresses", "Shoes", "Accessories"]
+    
+    for table in tables:
+        try:
+            cursor.execute(f"SELECT description FROM {table}")
+            results = cursor.fetchall()
+            descriptions.extend([row[0] for row in results if row and row[0]])
+        except Exception as e:
+            # Log the error or pass if a particular table is missing
+            print(f"Error fetching from {table}: {str(e)}")
+            continue
+    
+    conn.close()
+    return descriptions
