@@ -203,11 +203,11 @@ fi
 # Create Web App
 echo "Creating Web App..."
 az webapp create \
-  --resource-group $RESOURCE_GROUP \
+  --resource-group faishion-dev-rg \
   --plan $APP_SERVICE_PLAN \
-  --name $WEB_APP_NAME \
-  --runtime "DOTNETCORE|6.0" \
-  --tags "app=fAIshion" "environment=$FASHION_ENV" "project=student"
+  --name faishion-dev-app \
+  --runtime "PYTHON|3.9" \
+  --tags "app=fAIshion" "environment=dev" "project=student"
 
 # Configure App Settings - Split into individual commands to avoid errors
 echo "Configuring App Settings..."

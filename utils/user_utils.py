@@ -1,7 +1,7 @@
 import hashlib
 import uuid
 from fastapi import HTTPException
-from src.app.utils import db_utils
+from utils import db_utils
 
 def hash_password(password: str) -> str:
     """

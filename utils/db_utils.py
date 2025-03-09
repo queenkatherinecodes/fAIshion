@@ -10,10 +10,20 @@ DATABASE_PASSWORD = os.getenv("SQL_PASSWORD", "Fai$hion2025Complex!Pwd")
 
 def get_db_connection():
     """
-    Creates and returns a database connection
+    Creates and returns a database connection using the connection string from environment
     """
-    connection_string = f"DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={DATABASE_SERVER};DATABASE={DATABASE_NAME};UID={DATABASE_USER};PWD={DATABASE_PASSWORD}"
     try:
+        # First try to get the connection string from environment variables
+        connection_string = os.getenv("SQLCONNSTR_DefaultConnection")
+        
+        # If not found, fall back to individual components (for local development)
+        if not connection_string:
+            DATABASE_SERVER = os.getenv("SQL_SERVER", "faishion-dev-sql.database.windows.net")
+            DATABASE_NAME = os.getenv("SQL_DATABASE", "faishionDb")
+            DATABASE_USER = os.getenv("SQL_USER", "faishionadmin")
+            DATABASE_PASSWORD = os.getenv("SQL_PASSWORD", "Fai$hion2025Complex!Pwd")
+            connection_string = f"DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={DATABASE_SERVER};DATABASE={DATABASE_NAME};UID={DATABASE_USER};PWD={DATABASE_PASSWORD}"
+        
         conn = pyodbc.connect(connection_string)
         return conn
     except Exception as e:

@@ -2,9 +2,9 @@ import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from src.app.utils import db_utils
-from src.app.utils import user_utils
-from src.app.utils import clothing_utils
+from utils import db_utils
+from utils import user_utils
+from utils import clothing_utils
 from typing import Optional
 
 # Initialize FastAPI app

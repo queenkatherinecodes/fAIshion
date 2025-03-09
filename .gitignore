@@ -175,3 +175,6 @@ fAIshion/*
 
 # ignore dev settings
 .vscode/*
+
+# ignore .zip for deployment
+*.zip

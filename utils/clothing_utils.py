@@ -1,6 +1,6 @@
 import uuid
 from fastapi import HTTPException
-from src.app.utils import db_utils
+from utils import db_utils
 
 def add_clothing_item(user_id: str, description: str, clothing_type: str = None, **kwargs):
     """
