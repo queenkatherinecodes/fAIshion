@@ -90,7 +90,8 @@ async def upload_clothing_image(
 ):
     try:
         # Generate a description for the clothing item using the image file
-        clothing_description = services.caption_image(file.file)
+        img_url = services.convert_img(file.file)
+        clothing_description = services.caption_image(img_url)
     except Exception as e:
         return {"error": "Failed to generate description from image", "details": str(e)}
 
