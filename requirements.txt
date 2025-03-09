@@ -4,12 +4,20 @@ gunicorn>=20.1.0
 pyodbc>=4.0.32
 pydantic>=1.8.0
 python-multipart>=0.0.5
+python-dotenv
 openai
 transformers
 torch
 tensorflow>=2.0
 flax
-Pillow
-python-dotenv
-pytest
 tf-keras
+scikit-learn>=1.0.0
+pandas>=1.3.0
+numpy>=1.20.0
+spacy>=3.0.0
+Pillow
+pytest
+requests
+pandas
+# Add comment that reminds users to download spaCy model
+# After installing requirements, run: python -m spacy download en_core_web_sm
