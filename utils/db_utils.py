@@ -45,97 +45,31 @@ def create_users_table():
     finally:
         conn.close()
 
-def create_clothing_tables():
+def create_clothing_table():
     """
-    Creates the clothing item tables if they don't exist
+    Creates a single Clothing table for all clothing items
     """
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    tables = [
-        # Tops table
-        """
-        CREATE TABLE IF NOT EXISTS Tops (
+    try:
+        print("Creating Clothing table...")
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS Clothing (
             id TEXT PRIMARY KEY,
             userId TEXT NOT NULL,
             description TEXT,
-            color TEXT,
-            season TEXT,
-            occasion TEXT,
-            imageUrl TEXT,
+            image TEXT,
             FOREIGN KEY (userId) REFERENCES Users(id)
         )
-        """,
-        
-        # Bottoms table
-        """
-        CREATE TABLE IF NOT EXISTS Bottoms (
-            id TEXT PRIMARY KEY,
-            userId TEXT NOT NULL,
-            description TEXT,
-            color TEXT,
-            season TEXT,
-            occasion TEXT,
-            imageUrl TEXT,
-            FOREIGN KEY (userId) REFERENCES Users(id)
-        )
-        """,
-        
-        # Dresses table
-        """
-        CREATE TABLE IF NOT EXISTS Dresses (
-            id TEXT PRIMARY KEY,
-            userId TEXT NOT NULL,
-            description TEXT,
-            color TEXT,
-            season TEXT,
-            occasion TEXT,
-            length TEXT,
-            imageUrl TEXT,
-            FOREIGN KEY (userId) REFERENCES Users(id)
-        )
-        """,
-        
-        # Shoes table
-        """
-        CREATE TABLE IF NOT EXISTS Shoes (
-            id TEXT PRIMARY KEY,
-            userId TEXT NOT NULL,
-            description TEXT,
-            color TEXT,
-            type TEXT,
-            occasion TEXT,
-            imageUrl TEXT,
-            FOREIGN KEY (userId) REFERENCES Users(id)
-        )
-        """,
-        
-        # Accessories table
-        """
-        CREATE TABLE IF NOT EXISTS Accessories (
-            id TEXT PRIMARY KEY,
-            userId TEXT NOT NULL,
-            description TEXT,
-            type TEXT,
-            color TEXT,
-            occasion TEXT,
-            imageUrl TEXT,
-            FOREIGN KEY (userId) REFERENCES Users(id)
-        )
-        """
-    ]
-    
-    for i, table_query in enumerate(tables):
-        try:
-            print(f"Creating table {i+1}/{len(tables)}...")
-            cursor.execute(table_query)
-            conn.commit()
-            print(f"Table {i+1} created successfully")
-        except Exception as e:
-            print(f"Error creating table {i+1}: {str(e)}")
-            conn.rollback()
-    
-    conn.close()
+        """)
+        conn.commit()
+        print("Clothing table creation successful")
+    except Exception as e:
+        print(f"Error creating Clothing table: {str(e)}")
+        conn.rollback()
+    finally:
+        conn.close()
 
 def init_db():
     """
@@ -152,7 +86,7 @@ def init_db():
         
         # Create tables
         create_users_table()
-        create_clothing_tables()
+        create_clothing_table()
         
         print("Database initialization completed")
     except Exception as e:
