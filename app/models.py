@@ -33,3 +33,6 @@ class OutfitRequest(BaseModel):
     age: Optional[str] = None
     style_preferences: Optional[str] = None
     location: Optional[str] = None
+
+class OutfitWithAvatarRequest(OutfitRequest):
+    gender: str = "neutral"
