@@ -1,18 +1,25 @@
 # app/main.py
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, Form, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from utils import db_utils
 from utils import user_utils
 from utils import clothing_utils
 from app import services
-from app.models import User, ClothingItem, OutfitRequest
+from app.models import User, OutfitRequest, ClothingDescription, ClothingImage
 import logging
 
 logger = logging.getLogger(__name__)
 
 # Initialize FastAPI app
 app = FastAPI(title="fAIshion API", description="Fashion API with SQLite Database")
+
+# Initialize DB on startup
+@app.on_event("startup")
+async def startup_event():
+    logger.info("Application starting...")  # replaced print
+    db_utils.init_db()
+    logger.info("Database initialization completed.")  # replaced print
 
 # Enable CORS
 app.add_middleware(
@@ -61,27 +68,45 @@ async def register(user: User):
 async def login(user: User):
     return user_utils.verify_user(user.username, user.password)
 
-@app.post("/upload-clothing")
-async def upload_clothing(
-    clothingItem: ClothingItem
-):
-    if clothingItem.file:
-        clothing_description = services.caption_image(clothingItem.file.file)
-    else:
-        if not clothingItem.description:
-            return {"error": "Provide either an image file or a text description."}
-        clothing_description = clothingItem.description
 
+# Endpoint for uploading clothing by description
+@app.post("/upload-clothing/description")
+async def upload_clothing(clothingItem: ClothingDescription):
     try:
         result = clothing_utils.add_clothing_item(
             user_id=clothingItem.userId,
-            description=clothing_description
+            description=clothingItem.description
         )
     except Exception as e:
         return {"error": "Failed to save clothing item", "details": str(e)}
 
     return {"message": "Clothing item uploaded successfully", "result": result}
 
+# Endpoint for uploading clothing by image
+@app.post("/upload-clothing/image")
+async def upload_clothing_image(
+    userId: str = Form(...),
+    file: UploadFile = File(...)
+):
+    try:
+        # Generate a description for the clothing item using the image file
+        clothing_description = services.caption_image(file.file)
+    except Exception as e:
+        return {"error": "Failed to generate description from image", "details": str(e)}
+
+    try:
+        # Save the clothing item with the generated description to the database
+        result = clothing_utils.add_clothing_item(
+            user_id=userId,
+            description=clothing_description
+        )
+    except Exception as e:
+        return {"error": "Failed to save clothing item", "details": str(e)}
+    
+    return {"message": "Clothing item uploaded successfully", "result": clothing_description}
+
+
+# Endpoint for suggesting an outfit
 @app.get("/suggest-outfit")
 async def suggest_outfit(
     outfitRequest: OutfitRequest

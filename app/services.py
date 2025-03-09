@@ -6,6 +6,7 @@ from transformers import pipeline
 from PIL import Image
 from app.config import WEATHER_API_KEY
 import logging  # added import for logging
+from typing import IO
 
 logger = logging.getLogger(__name__)  # initialize logger
 
@@ -33,19 +34,17 @@ def fetch_weather(location: str) -> dict:
     logger.info(f"Weather fetched for {location}: {temperature}°C, {description}")
     return {"temperature": temperature, "description": description}
 
-def caption_image(file) -> str:
-    """
-    Generate a description for the clothing item using the Hugging Face image captioning pipeline.
-    """
+def caption_image(file: IO) -> str:
     try:
-        image = Image.open(file)
-        file.seek(0)  # Reset file pointer for further use if needed
-        caption_output = captioner(image)
+        with Image.open(file) as image:
+            file.seek(0)
+            caption_output = captioner(image)
         logger.info("Image caption generated")
         return caption_output[0]['generated_text']
     except Exception as e:
         logger.error(f"Caption image error: {str(e)}")
-        return f"Unable to generate caption: {str(e)}"
+        raise RuntimeError(f"Unable to generate caption: {str(e)}")
+
 
 def get_outfit_suggestion(clothing_descriptions: str, occasion: str, age: int, style_preferences: str,
                           location: str, weather: dict) -> str:

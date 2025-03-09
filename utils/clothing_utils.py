@@ -29,7 +29,7 @@ def add_clothing_item(user_id: str, description: str):
         )
 
         conn.commit()
-        logger.info(f"Clothing item added: {item_id}")  # added logging
+        logger.info(f"Clothing item added: {item_id}")
         
         return {
             "id": item_id,
