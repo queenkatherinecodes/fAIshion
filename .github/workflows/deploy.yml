@@ -151,42 +151,32 @@ jobs:
           fi
       
       - name: Configure Web App Settings
-        run: |
-          # First set the app settings without the connection string
-          echo "Setting application settings..."
-          az webapp config appsettings set --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --settings \
-            "SQL_SERVER=${{ env.SQL_SERVER_NAME }}.database.windows.net" \
-            "SQL_DATABASE=${{ env.SQL_DB_NAME }}" \
-            "SQL_USER=${{ env.SQL_ADMIN_USER }}" \
-            "SQL_PASSWORD=${{ secrets.SQL_ADMIN_PASSWORD }}" \
-            "WEBSITE_RUN_FROM_PACKAGE=1" \
-            "SCM_DO_BUILD_DURING_DEPLOYMENT=true"
-          
-          # Set storage connection settings using direct key approach
-          echo "Setting storage connection settings using storage keys..."
-          STORAGE_KEY=$(az storage account keys list --resource-group ${{ env.RESOURCE_GROUP }} --account-name ${{ env.STORAGE_ACCOUNT_NAME }} --query "[0].value" -o tsv)
-          
-          # Build a connection string manually
-          CONN_STRING="DefaultEndpointsProtocol=https;AccountName=${{ env.STORAGE_ACCOUNT_NAME }};AccountKey=$STORAGE_KEY;EndpointSuffix=core.windows.net"
-          
-          # Set the connection string
-          az webapp config appsettings set --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --settings "StorageAccount:ConnectionString=$CONN_STRING"
-          
-          # Set the container settings separately
-          az webapp config appsettings set --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --settings \
-            "StorageAccount:WardrobeContainer=${{ env.WARDROBE_CONTAINER }}" \
-            "StorageAccount:OutfitsContainer=${{ env.OUTFITS_CONTAINER }}"
-          
-          # Set API keys separately
-          echo "Setting API keys..."
-          az webapp config appsettings set --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --settings \
-            "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" \
-            "WEATHER_API_KEY=${{ secrets.WEATHER_API_KEY }}"
-          
-          # Try to update python version if necessary
-          echo "Setting Python version..."
-          az webapp config set --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --linux-fx-version "PYTHON|3.9" || true
-          
+    run: |
+      # Set the app settings without the storage connection string
+      echo "Setting application settings..."
+      az webapp config appsettings set --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --settings \
+        "SQL_SERVER=${{ env.SQL_SERVER_NAME }}.database.windows.net" \
+        "SQL_DATABASE=${{ env.SQL_DB_NAME }}" \
+        "SQL_USER=${{ env.SQL_ADMIN_USER }}" \
+        "SQL_PASSWORD=${{ secrets.SQL_ADMIN_PASSWORD }}" \
+        "WEBSITE_RUN_FROM_PACKAGE=1" \
+        "SCM_DO_BUILD_DURING_DEPLOYMENT=true"
+      
+      # Set the container settings separately
+      az webapp config appsettings set --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --settings \
+        "StorageAccount:WardrobeContainer=${{ env.WARDROBE_CONTAINER }}" \
+        "StorageAccount:OutfitsContainer=${{ env.OUTFITS_CONTAINER }}"
+      
+      # Set API keys separately
+      echo "Setting API keys..."
+      az webapp config appsettings set --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --settings \
+        "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" \
+        "WEATHER_API_KEY=${{ secrets.WEATHER_API_KEY }}"
+      
+      # Try to update python version if necessary
+      echo "Setting Python version..."
+      az webapp config set --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --linux-fx-version "PYTHON|3.9" || true
+            
       - name: Get Web App URL
         id: get_webapp_url
         run: |
