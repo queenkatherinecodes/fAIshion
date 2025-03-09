@@ -5,6 +5,7 @@ from openai import OpenAI
 from transformers import pipeline
 from PIL import Image
 import logging
+import base64
 
 logger = logging.getLogger(__name__)  # initialize logger
 
@@ -32,16 +33,48 @@ def fetch_weather(location: str) -> dict:
     logger.info(f"Weather fetched for {location}: {temperature}°C, {description}")
     return {"temperature": temperature, "description": description}
 
-def caption_image(file: IO) -> str:
+def convert_img(file) -> str:
+    """
+    Convert an image file to a base64 string.
+    """
     try:
-        with Image.open(file) as image:
-            file.seek(0)
-            caption_output = captioner(image)
-        logger.info("Image caption generated")
-        return caption_output[0]['generated_text']
+        file.seek(0)
+        encoded_image = base64.b64encode(file.read()).decode("utf-8")
+        # Create a data URL for the image
+        image_data_url = f"data:image/jpeg;base64,{encoded_image}"
     except Exception as e:
-        logger.error(f"Caption image error: {str(e)}")
-        raise RuntimeError(f"Unable to generate caption: {str(e)}")
+        logger.error(f"Image conversion error: {str(e)}")
+        return f"Unable to convert image: {str(e)}"
+    return image_data_url
+
+
+def caption_image(img_url) -> str:
+    prompt = (
+        "Provided with an image give a short description of the clothing item."
+        )
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            temperature=0.2,
+            messages=[
+                {"role": "system", "content": prompt},
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": img_url}
+                        }
+                    ]
+                }
+            ],
+            max_tokens=300,
+        )
+    except Exception as e:
+        logger.error(f"Image caption error: {str(e)}")
+        return f"Unable to generate caption: {str(e)}"
+
+    return response.choices[0].message.content.strip()
 
 
 def get_outfit_suggestion(clothing_descriptions: str, occasion: str, age: int, style_preferences: str,
@@ -49,25 +82,18 @@ def get_outfit_suggestion(clothing_descriptions: str, occasion: str, age: int, s
     """
     Build a prompt that includes all clothing descriptions plus additional details,
     then call OpenAI's API to generate an outfit suggestion.
-    The suggestion is forced into a consistent format with:
-      Shirt: <...>
-      Pants: <...>
-      Accessories: <...>
-      Shoes: <...>
     """
     prompt = (
-        f"Based on the following clothing items:\n"
+        "Based on the following clothing items:\n"
         f"{clothing_descriptions}\n\n"
-        f"And additional details:\n"
+        "Additional details:\n"
         f"- Occasion: {occasion}\n"
         f"- Age: {age if age is not None else 'N/A'}\n"
         f"- Style preferences: {style_preferences if style_preferences else 'N/A'}\n"
         f"- Current weather in {location}: {weather['temperature']}°C, {weather['description']}\n\n"
-        "Please suggest a complete outfit that would be suitable, and return your answer in exactly the following format:\n"
-        "Shirt: <your suggestion for a shirt>\n"
-        "Pants: <your suggestion for pants>\n"
-        "Accessories: <your suggestion for accessories>\n"
-        "Shoes: <your suggestion for shoes>\n"
+        "Suggest a complete outfit using only the provided clothing items."
+        "Format your response as bullet points, with each item labeled (e.g., Top, Bottom, Accessories)"
+        "just give a raw suggestion."
     )
     try:
         completion = client.chat.completions.create(
