@@ -162,27 +162,19 @@ jobs:
             "WEBSITE_RUN_FROM_PACKAGE=1" \
             "SCM_DO_BUILD_DURING_DEPLOYMENT=true"
           
-          # Get storage connection string and set separately
+          # Get storage connection string and set directly
           echo "Setting storage connection settings..."
-          STORAGE_CONNECTION=$(az storage account show-connection-string --name ${{ env.STORAGE_ACCOUNT_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} --query connectionString -o tsv || echo "")
-          if [ ! -z "$STORAGE_CONNECTION" ]; then
-            # Store connection string in a temporary JSON file
-            echo '{"StorageAccount:ConnectionString": "'"$STORAGE_CONNECTION"'"}' > storage_settings.json
-            
-            # Apply connection string from file
-            az webapp config appsettings set --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --settings @storage_settings.json
-            
-            # Set the container settings separately
-            az webapp config appsettings set --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --settings \
-              "StorageAccount:WardrobeContainer=${{ env.WARDROBE_CONTAINER }}" \
-              "StorageAccount:OutfitsContainer=${{ env.OUTFITS_CONTAINER }}"
-            
-            # Clean up temporary file
-            rm storage_settings.json
-          else
-            echo "Warning: Could not retrieve storage connection string"
-          fi
-            
+          STORAGE_CONNECTION=$(az storage account show-connection-string --name ${{ env.STORAGE_ACCOUNT_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} --query connectionString -o tsv)
+          
+          # Apply connection string directly without using a file
+          az webapp config appsettings set --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --settings \
+            "StorageAccount:ConnectionString=$STORAGE_CONNECTION"
+          
+          # Set the container settings separately
+          az webapp config appsettings set --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --settings \
+            "StorageAccount:WardrobeContainer=${{ env.WARDROBE_CONTAINER }}" \
+            "StorageAccount:OutfitsContainer=${{ env.OUTFITS_CONTAINER }}"
+          
           # Set API keys separately
           echo "Setting API keys..."
           az webapp config appsettings set --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --settings \
@@ -192,12 +184,11 @@ jobs:
           # Try to update python version if necessary
           echo "Setting Python version..."
           az webapp config set --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --linux-fx-version "PYTHON|3.9" || true
-      
-      - name: Get Web App URL
-        id: get_webapp_url
-        run: |
-          WEB_APP_URL=$(az webapp show --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --query defaultHostName -o tsv)
-          echo "::set-output name=url::https://$WEB_APP_URL"
+            - name: Get Web App URL
+              id: get_webapp_url
+              run: |
+                WEB_APP_URL=$(az webapp show --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --query defaultHostName -o tsv)
+                echo "::set-output name=url::https://$WEB_APP_URL"
           
   deploy-application:
     needs: setup-infrastructure
