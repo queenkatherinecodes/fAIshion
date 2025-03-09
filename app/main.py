@@ -1,11 +1,12 @@
 import os
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from utils import db_utils
 from utils import user_utils
 from utils import clothing_utils
 from typing import Optional
+from app.services import caption_image, get_outfit_suggestion, fetch_weather
 
 # Initialize FastAPI app
 app = FastAPI(title="fAIshion API", description="Fashion API with Database Setup")
@@ -99,3 +100,70 @@ async def get_user_clothing(user_id: str):
     # This is a placeholder - you'll need to implement this function
     # in clothing_utils.py later
     return {"message": "This endpoint is not implemented yet"}
+
+@app.post("/upload-clothing")
+async def upload_clothing(
+    description: str = Form(None),
+    file: UploadFile = File(None)
+):
+    """
+    Upload a clothing item.
+    - If an image file is provided, generate a description using the Hugging Face captioning pipeline.
+    - Otherwise, use the provided text description.
+    The description is then saved to the database.
+    """
+    if file:
+        clothing_description = caption_image(file.file)
+    else:
+        if not description:
+            return {"error": "Provide either an image file or a text description."}
+        clothing_description = description
+
+    try:
+        """
+        save_clothing_item(clothing_description)"
+        """
+    except Exception as e:
+        return {"error": "Failed to save clothing item", "details": str(e)}
+
+    return {"message": "Clothing item uploaded successfully", "description": clothing_description}
+
+@app.post("/suggest-outfit")
+async def suggest_outfit(
+    occasion: str = Form(...),
+    age: int = Form(None),
+    style_preferences: str = Form(None),
+    location: str = Form("New York")
+):
+    """
+    Generate an outfit suggestion based on:
+      - All clothing items stored in the database
+      - The provided occasion, age, style preferences, and current weather
+    """
+    try:
+        
+        clothing_items = get_all_clothing_descriptions()
+    except Exception as e:
+        return {"error": "Failed to fetch clothing items", "details": str(e)}
+
+    if not clothing_items:
+        return {"error": "No clothing items found. Upload clothing items first."}
+
+    # Combine all clothing descriptions into one text block
+    all_descriptions = "\n".join(f"- {desc}" for desc in clothing_items)
+
+    try:
+        weather = fetch_weather(location)
+    except Exception as e:
+        return {"error": "Failed to fetch weather", "details": str(e)}
+
+    try:
+        outfit = get_outfit_suggestion(all_descriptions, occasion, age, style_preferences, location, weather)
+    except Exception as e:
+        return {"error": "Failed to get outfit suggestion", "details": str(e)}
+
+    return {
+        "weather": weather,
+        "clothing_items": clothing_items,
+        "outfit_suggestion": outfit
+    }
