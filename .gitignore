@@ -178,3 +178,6 @@ fAIshion/*
 
 # ignore local sqlite db data
 faishion.db
+
+# ignore local uploads
+uploads/*
