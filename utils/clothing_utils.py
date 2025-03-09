@@ -89,7 +89,7 @@ def get_all_clothing_descriptions():
     conn = db_utils.get_db_connection()
     cursor = conn.cursor()
     descriptions = []
-    tables = ["Tops", "Bottoms", "Dresses", "Shoes", "Accessories"]
+    tables = ["Clothing"]
     
     for table in tables:
         try:

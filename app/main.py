@@ -83,31 +83,6 @@ async def register(user: User):
 async def login(user: User):
     return user_utils.verify_user(user.username, user.password)
 
-# Define Pydantic model for clothing items
-class ClothingItem(BaseModel):
-    userId: str
-    description: str
-    type: Optional[str] = None
-    color: Optional[str] = None
-    season: Optional[str] = None
-    occasion: Optional[str] = None
-    style: Optional[str] = None
-    length: Optional[str] = None
-
-# Clothing endpoints
-@app.post("/api/clothing")
-async def add_clothing(item: ClothingItem):
-    return clothing_utils.add_clothing_item(
-        user_id=item.userId,
-        description=item.description,
-        clothing_type=item.type,
-        color=item.color,
-        season=item.season,
-        occasion=item.occasion,
-        style=item.style,
-        length=item.length
-    )
-
 @app.get("/api/clothing/{user_id}")
 async def get_user_clothing(user_id: str):
     # This is a placeholder - you'll need to implement this function
