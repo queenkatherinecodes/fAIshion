@@ -7,7 +7,10 @@ from utils import db_utils
 from utils import user_utils
 from utils import clothing_utils
 from typing import Optional
-from app.services import caption_image, get_outfit_suggestion, fetch_weather
+from app import services
+import logging  # added import for logging
+
+logger = logging.getLogger(__name__)  # initialize logger
 
 # Initialize FastAPI app
 app = FastAPI(title="fAIshion API", description="Fashion API with SQLite Database")
@@ -24,9 +27,9 @@ app.add_middleware(
 # Initialize DB on startup
 @app.on_event("startup")
 async def startup_event():
-    print("Application starting...")
+    logger.info("Application starting...")  # replaced print
     db_utils.init_db()
-    print("Database initialization completed.")
+    logger.info("Database initialization completed.")  # replaced print
 
 # Basic routes
 @app.get("/")
@@ -111,34 +114,32 @@ async def get_user_clothing(user_id: str):
     # in clothing_utils.py later
     return {"message": "This endpoint is not implemented yet"}
 
+
+# Add new routes for uploading clothing items and generating outfit suggestions
 @app.post("/upload-clothing")
 async def upload_clothing(
+    userId: str = Form(...),
     description: str = Form(None),
     file: UploadFile = File(None)
 ):
-    """
-    Upload a clothing item.
-    - If an image file is provided, generate a description using the Hugging Face captioning pipeline.
-    - Otherwise, use the provided text description.
-    The description is then saved to the database.
-    """
     if file:
-        clothing_description = caption_image(file.file)
+        clothing_description = services.caption_image(file.file)
     else:
         if not description:
             return {"error": "Provide either an image file or a text description."}
         clothing_description = description
 
     try:
-        """
-        save_clothing_item(clothing_description)"
-        """
+        result = clothing_utils.add_clothing_item(
+            user_id=userId,
+            description=clothing_description
+        )
     except Exception as e:
         return {"error": "Failed to save clothing item", "details": str(e)}
 
-    return {"message": "Clothing item uploaded successfully", "description": clothing_description}
+    return {"message": "Clothing item uploaded successfully", "result": result}
 
-@app.post("/suggest-outfit")
+@app.get("/suggest-outfit")
 async def suggest_outfit(
     occasion: str = Form(...),
     age: int = Form(None),
@@ -151,7 +152,8 @@ async def suggest_outfit(
       - The provided occasion, age, style preferences, and current weather
     """
     try:
-        clothing_items = get_all_clothing_descriptions()
+        
+        clothing_items = clothing_utils.get_all_clothing_descriptions()
     except Exception as e:
         return {"error": "Failed to fetch clothing items", "details": str(e)}
 
@@ -162,12 +164,12 @@ async def suggest_outfit(
     all_descriptions = "\n".join(f"- {desc}" for desc in clothing_items)
 
     try:
-        weather = fetch_weather(location)
+        weather = services.fetch_weather(location)
     except Exception as e:
         return {"error": "Failed to fetch weather", "details": str(e)}
 
     try:
-        outfit = get_outfit_suggestion(all_descriptions, occasion, age, style_preferences, location, weather)
+        outfit = services.get_outfit_suggestion(all_descriptions, occasion, age, style_preferences, location, weather)
     except Exception as e:
         return {"error": "Failed to get outfit suggestion", "details": str(e)}
 
