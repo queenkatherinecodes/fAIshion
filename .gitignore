@@ -176,5 +176,5 @@ fAIshion/*
 # ignore dev settings
 .vscode/*
 
-# ignore .zip for deployment
-*.zip
+# ignore local sqlite db data
+data/faishion.db
