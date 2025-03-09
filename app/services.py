@@ -4,8 +4,7 @@ import os
 from openai import OpenAI
 from transformers import pipeline
 from PIL import Image
-from app.config import WEATHER_API_KEY
-import logging  # added import for logging
+import logging
 
 logger = logging.getLogger(__name__)  # initialize logger
 
@@ -20,7 +19,7 @@ def fetch_weather(location: str) -> dict:
     weather_url = "http://api.openweathermap.org/data/2.5/weather"
     params = {
         "q": location,
-        "appid": WEATHER_API_KEY,
+        "appid": os.getenv("WEATHER_API_KEY"),
         "units": "metric"
     }
     response = requests.get(weather_url, params=params)
