@@ -126,7 +126,7 @@ jobs:
                 --resource-group ${{ env.RESOURCE_GROUP }} \
                 --name ${{ env.WEBAPP_NAME }} \
                 --settings \
-                "SQLCONNSTR_DefaultConnection=Server=tcp:${SQL_SERVER_FQDN},1433;Database=${{ env.SQL_DB_NAME }};User ID=${{ env.SQL_ADMIN_USER }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};Encrypt=true;Connection Timeout=30;"
+                "ConnectionStrings__DefaultConnection=Server=tcp:${SQL_SERVER_FQDN},1433;Database=${{ env.SQL_DB_NAME }};User ID=${{ env.SQL_ADMIN_USER }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};Encrypt=true;Connection Timeout=30;"
                 
               echo "SQL environment variables configured successfully"
             else
