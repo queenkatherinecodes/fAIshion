@@ -90,21 +90,26 @@ async def upload_clothing_image(
 ):
     try:
         # Generate a description for the clothing item using the image file
+<<<<<<< Updated upstream
         img_url = services.convert_img(file.file)
         clothing_description = services.caption_image(img_url)
+=======
+        clothing_description = services.caption_image(file.file)
+        file.file.seek(0)
+>>>>>>> Stashed changes
     except Exception as e:
         return {"error": "Failed to generate description from image", "details": str(e)}
 
     try:
-        # Save the clothing item with the generated description to the database
         result = clothing_utils.add_clothing_item(
             user_id=userId,
-            description=clothing_description
+            description=clothing_description,
+            file=file
         )
     except Exception as e:
         return {"error": "Failed to save clothing item", "details": str(e)}
     
-    return {"message": "Clothing item uploaded successfully", "result": clothing_description}
+    return {"message": "Clothing item uploaded successfully", "result": result, "description": clothing_description}
 
 
 # Endpoint for suggesting an outfit

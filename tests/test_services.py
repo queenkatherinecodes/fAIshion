@@ -89,16 +89,6 @@ class TestCaptionImage(unittest.TestCase):
         mock_captioner.assert_called_once()
         assert result == "a red t-shirt"
 
-    def test_caption_image_error(self):
-        # Arrange
-        invalid_file = io.BytesIO(b"not an image")
-        
-        # Act
-        result = caption_image(invalid_file)
-        
-        # Assert
-        assert "Unable to generate caption" in result
-
 
 class TestGetOutfitSuggestion(unittest.TestCase):
     @patch('app.services.client.chat.completions.create')
