@@ -99,7 +99,7 @@ jobs:
         run: |
           # Set app settings for your Azure services - modify as needed for your application
           
-          # SQL Database connection
+          # SQL Database connection - matching the expected environment variables in db_utils.py
           echo "Checking SQL Server..."
           SQL_SERVER_EXISTS=$(az sql server list --resource-group ${{ env.RESOURCE_GROUP }} --query "[?name=='${{ env.SQL_SERVER_NAME }}'].name" -o tsv)
           
@@ -108,14 +108,27 @@ jobs:
             SQL_SERVER_FQDN=$(az sql server show --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.SQL_SERVER_NAME }} --query fullyQualifiedDomainName -o tsv)
             
             if [ ! -z "$SQL_SERVER_FQDN" ]; then
-              echo "Setting SQL connection string as app setting instead of connection string..."
-              # Use app settings instead of connection strings to avoid escaping issues
-              CONNECTION_STRING="Server=tcp:${SQL_SERVER_FQDN},1433;Database=${{ env.SQL_DB_NAME }};User ID=${{ env.SQL_ADMIN_USER }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};Encrypt=true;Connection Timeout=30;"
+              echo "Setting SQL connection parameters as individual environment variables..."
               
+              # Set individual environment variables for the Python app
               az webapp config appsettings set \
                 --resource-group ${{ env.RESOURCE_GROUP }} \
                 --name ${{ env.WEBAPP_NAME }} \
-                --settings "ConnectionStrings__DefaultConnection=$CONNECTION_STRING"
+                --settings \
+                "SQL_SERVER=${SQL_SERVER_FQDN}" \
+                "SQL_DATABASE=${{ env.SQL_DB_NAME }}" \
+                "SQL_USER=${{ env.SQL_ADMIN_USER }}" \
+                "SQL_PASSWORD=${{ secrets.SQL_ADMIN_PASSWORD }}"
+              
+              # Also try to set the connection string format for SQLCONNSTR_DefaultConnection
+              # This is formatted for App Service to convert to SQLCONNSTR_DefaultConnection
+              az webapp config appsettings set \
+                --resource-group ${{ env.RESOURCE_GROUP }} \
+                --name ${{ env.WEBAPP_NAME }} \
+                --settings \
+                "SQLCONNSTR_DefaultConnection=Server=tcp:${SQL_SERVER_FQDN},1433;Database=${{ env.SQL_DB_NAME }};User ID=${{ env.SQL_ADMIN_USER }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};Encrypt=true;Connection Timeout=30;"
+                
+              echo "SQL environment variables configured successfully"
             else
               echo "Could not fetch SQL Server FQDN. Skipping SQL configuration."
             fi
