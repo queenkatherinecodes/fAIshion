@@ -36,142 +36,187 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Debug environment variables
+        run: |
+          echo "Resource Group: ${{ env.RESOURCE_GROUP }}"
+          echo "SQL Server: ${{ env.SQL_SERVER_NAME }}"
+          echo "Web App Name: ${{ env.WEB_APP_NAME }}"
+          # Check if secrets are set (without revealing their values)
+          if [ -z "${{ secrets.SQL_ADMIN_PASSWORD }}" ]; then echo "SQL_ADMIN_PASSWORD is empty"; else echo "SQL_ADMIN_PASSWORD is set"; fi
+          if [ -z "${{ secrets.OPENAI_API_KEY }}" ]; then echo "OPENAI_API_KEY is empty"; else echo "OPENAI_API_KEY is set"; fi
+          if [ -z "${{ secrets.WEATHER_API_KEY }}" ]; then echo "WEATHER_API_KEY is empty"; else echo "WEATHER_API_KEY is set"; fi
+          if [ -z "${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}" ]; then echo "AZURE_WEBAPP_PUBLISH_PROFILE is empty"; else echo "AZURE_WEBAPP_PUBLISH_PROFILE is set"; fi
+      
+      # Optional: Delete existing resources before recreating
+      - name: Delete existing resources
+        run: |
+          echo "Deleting resource group ${{ env.RESOURCE_GROUP }} if it exists..."
+          az group delete --name ${{ env.RESOURCE_GROUP }} --yes --no-wait || true
           
-      - name: Create Resource Group if not exists
+          echo "Waiting for resource group deletion to complete..."
+          while az group show --name ${{ env.RESOURCE_GROUP }} &> /dev/null; do
+            echo "Resource group still exists, waiting..."
+            sleep 10
+          done
+          echo "Resource group deleted or did not exist."
+          
+      - name: Create Resource Group
         run: |
-          if ! az group show --name ${{ env.RESOURCE_GROUP }} &> /dev/null; then
-            az group create --name ${{ env.RESOURCE_GROUP }} --location ${{ env.LOCATION }} \
-              --tags "app=fAIshion" "environment=${{ env.FASHION_ENV }}" "project=student"
-            echo "Resource group created."
-          else
-            echo "Resource group already exists."
-          fi
+          echo "Creating resource group..."
+          az group create --name ${{ env.RESOURCE_GROUP }} --location ${{ env.LOCATION }} \
+            --tags "app=fAIshion" "environment=${{ env.FASHION_ENV }}" "project=student"
       
-      - name: Check SQL Server and create if needed
+      - name: Create SQL Server
         run: |
-          if ! az sql server show --name ${{ env.SQL_SERVER_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} &> /dev/null; then
-            echo "Creating SQL Server..."
-            az sql server create \
-              --name ${{ env.SQL_SERVER_NAME }} \
-              --resource-group ${{ env.RESOURCE_GROUP }} \
-              --location ${{ env.LOCATION }} \
-              --admin-user ${{ env.SQL_ADMIN_USER }} \
-              --admin-password "${{ secrets.SQL_ADMIN_PASSWORD }}"
-              
-            echo "Configuring SQL Server firewall..."
-            az sql server firewall-rule create \
-              --resource-group ${{ env.RESOURCE_GROUP }} \
-              --server ${{ env.SQL_SERVER_NAME }} \
-              --name "AllowAzureServices" \
-              --start-ip-address 0.0.0.0 \
-              --end-ip-address 0.0.0.0
-              
-            echo "Creating SQL Database..."
-            az sql db create \
-              --resource-group ${{ env.RESOURCE_GROUP }} \
-              --server ${{ env.SQL_SERVER_NAME }} \
-              --name ${{ env.SQL_DB_NAME }} \
-              --service-objective Basic
-          else
-            echo "SQL Server already exists."
-          fi
-      
-      - name: Check Storage Account and create if needed
-        run: |
-          if ! az storage account show --name ${{ env.STORAGE_ACCOUNT_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} &> /dev/null; then
-            echo "Creating Storage Account..."
-            az storage account create \
-              --name ${{ env.STORAGE_ACCOUNT_NAME }} \
-              --resource-group ${{ env.RESOURCE_GROUP }} \
-              --location ${{ env.LOCATION }} \
-              --sku Standard_LRS \
-              --kind StorageV2 \
-              --access-tier Hot
-              
-            echo "Getting Storage Account key..."
-            STORAGE_KEY=$(az storage account keys list --resource-group ${{ env.RESOURCE_GROUP }} --account-name ${{ env.STORAGE_ACCOUNT_NAME }} --query "[0].value" -o tsv)
+          echo "Creating SQL Server..."
+          az sql server create \
+            --name ${{ env.SQL_SERVER_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --location ${{ env.LOCATION }} \
+            --admin-user ${{ env.SQL_ADMIN_USER }} \
+            --admin-password "${{ secrets.SQL_ADMIN_PASSWORD }}"
             
-            echo "Creating Blob Containers..."
-            az storage container create \
-              --name ${{ env.WARDROBE_CONTAINER }} \
-              --account-name ${{ env.STORAGE_ACCOUNT_NAME }} \
-              --account-key $STORAGE_KEY \
-              --public-access blob
-              
-            az storage container create \
-              --name ${{ env.OUTFITS_CONTAINER }} \
-              --account-name ${{ env.STORAGE_ACCOUNT_NAME }} \
-              --account-key $STORAGE_KEY \
-              --public-access blob
-          else
-            echo "Storage Account already exists."
-          fi
+          echo "Configuring SQL Server firewall..."
+          az sql server firewall-rule create \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --server ${{ env.SQL_SERVER_NAME }} \
+            --name "AllowAzureServices" \
+            --start-ip-address 0.0.0.0 \
+            --end-ip-address 0.0.0.0
+            
+          echo "Creating SQL Database..."
+          az sql db create \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --server ${{ env.SQL_SERVER_NAME }} \
+            --name ${{ env.SQL_DB_NAME }} \
+            --service-objective Basic
+      
+      - name: Create Storage Account
+        run: |
+          echo "Creating Storage Account..."
+          az storage account create \
+            --name ${{ env.STORAGE_ACCOUNT_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --location ${{ env.LOCATION }} \
+            --sku Standard_LRS \
+            --kind StorageV2 \
+            --access-tier Hot
+            
+          echo "Getting Storage Account key..."
+          STORAGE_KEY=$(az storage account keys list --resource-group ${{ env.RESOURCE_GROUP }} --account-name ${{ env.STORAGE_ACCOUNT_NAME }} --query "[0].value" -o tsv)
           
-      - name: Check App Service Plan & Web App and create if needed
+          echo "Creating Blob Containers..."
+          az storage container create \
+            --name ${{ env.WARDROBE_CONTAINER }} \
+            --account-name ${{ env.STORAGE_ACCOUNT_NAME }} \
+            --account-key $STORAGE_KEY \
+            --public-access blob
+            
+          az storage container create \
+            --name ${{ env.OUTFITS_CONTAINER }} \
+            --account-name ${{ env.STORAGE_ACCOUNT_NAME }} \
+            --account-key $STORAGE_KEY \
+            --public-access blob
+          
+      - name: Create App Service Plan & Web App
         run: |
           # Array of regions to try
           REGIONS=("eastus" "westus" "westus2" "centralus" "southcentralus")
           
-          if ! az appservice plan show --name ${{ env.APP_SERVICE_PLAN }} --resource-group ${{ env.RESOURCE_GROUP }} &> /dev/null; then
-            for REGION in "${REGIONS[@]}"; do
-              echo "Trying to create App Service Plan in $REGION..."
-              if az appservice plan create \
-                --name ${{ env.APP_SERVICE_PLAN }} \
-                --resource-group ${{ env.RESOURCE_GROUP }} \
-                --sku F1 \
-                --is-linux \
-                --location $REGION \
-                --tags "app=fAIshion" "environment=${{ env.FASHION_ENV }}" "project=student" &> /dev/null; then
-                echo "Successfully created App Service Plan in $REGION"
-                APP_LOCATION=$REGION
-                break
-              else
-                echo "Failed to create in $REGION, trying next..."
-              fi
-            done
-            
-            if [ -z "$APP_LOCATION" ]; then
-              echo "Could not create App Service Plan in any region."
-              exit 1
-            fi
-          else
-            echo "App Service Plan already exists."
-          fi
-          
-          if ! az webapp show --name ${{ env.WEB_APP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} &> /dev/null; then
-            echo "Creating Web App..."
-            az webapp create \
+          for REGION in "${REGIONS[@]}"; do
+            echo "Trying to create App Service Plan in $REGION..."
+            if az appservice plan create \
+              --name ${{ env.APP_SERVICE_PLAN }} \
               --resource-group ${{ env.RESOURCE_GROUP }} \
-              --plan ${{ env.APP_SERVICE_PLAN }} \
-              --name ${{ env.WEB_APP_NAME }} \
-              --runtime "PYTHON|3.9" \
-              --tags "app=fAIshion" "environment=${{ env.FASHION_ENV }}" "project=student"
-          else
-            echo "Web App already exists."
+              --sku F1 \
+              --is-linux \
+              --location $REGION \
+              --tags "app=fAIshion" "environment=${{ env.FASHION_ENV }}" "project=student" &> /dev/null; then
+              echo "Successfully created App Service Plan in $REGION"
+              APP_LOCATION=$REGION
+              break
+            else
+              echo "Failed to create in $REGION, trying next..."
+            fi
+          done
+          
+          if [ -z "$APP_LOCATION" ]; then
+            echo "Could not create App Service Plan in any region."
+            exit 1
           fi
+        
+          echo "Creating Web App..."
+          az webapp create \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --plan ${{ env.APP_SERVICE_PLAN }} \
+            --name ${{ env.WEB_APP_NAME }} \
+            --runtime "PYTHON|3.9" \
+            --tags "app=fAIshion" "environment=${{ env.FASHION_ENV }}" "project=student"
       
-      - name: Configure Web App Settings
+      - name: Configure Web App Settings (Debug)
         run: |
-          # Set the app settings without the storage connection string
-          echo "Setting application settings..."
-          az webapp config appsettings set --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --settings \
-            "SQL_SERVER=${{ env.SQL_SERVER_NAME }}.database.windows.net" \
-            "SQL_DATABASE=${{ env.SQL_DB_NAME }}" \
-            "SQL_USER=${{ env.SQL_ADMIN_USER }}" \
-            "SQL_PASSWORD=${{ secrets.SQL_ADMIN_PASSWORD }}" \
-            "WEBSITE_RUN_FROM_PACKAGE=1" \
-            "SCM_DO_BUILD_DURING_DEPLOYMENT=true"
+          # Debug storage account connection string
+          STORAGE_CONN=$(az storage account show-connection-string --name ${{ env.STORAGE_ACCOUNT_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} --query connectionString -o tsv)
+          echo "Storage connection string retrieved: ${STORAGE_CONN:0:20}..."
           
-          # Set the container settings separately
-          az webapp config appsettings set --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --settings \
-            "StorageAccount:WardrobeContainer=${{ env.WARDROBE_CONTAINER }}" \
-            "StorageAccount:OutfitsContainer=${{ env.OUTFITS_CONTAINER }}"
+          echo "Setting application settings with debugging..."
           
-          # Set API keys separately
-          echo "Setting API keys..."
-          az webapp config appsettings set --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --settings \
-            "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" \
-            "WEATHER_API_KEY=${{ secrets.WEATHER_API_KEY }}"
+          # Create a settings file to avoid issues with command line escaping
+          cat << EOF > app_settings.json
+          [
+            {
+              "name": "SQL_SERVER",
+              "value": "${{ env.SQL_SERVER_NAME }}.database.windows.net"
+            },
+            {
+              "name": "SQL_DATABASE",
+              "value": "${{ env.SQL_DB_NAME }}"
+            },
+            {
+              "name": "SQL_USER",
+              "value": "${{ env.SQL_ADMIN_USER }}"
+            },
+            {
+              "name": "SQL_PASSWORD",
+              "value": "${{ secrets.SQL_ADMIN_PASSWORD }}"
+            },
+            {
+              "name": "WEBSITE_RUN_FROM_PACKAGE",
+              "value": "1"
+            },
+            {
+              "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
+              "value": "true"
+            },
+            {
+              "name": "StorageAccount__WardrobeContainer",
+              "value": "${{ env.WARDROBE_CONTAINER }}"
+            },
+            {
+              "name": "StorageAccount__OutfitsContainer",
+              "value": "${{ env.OUTFITS_CONTAINER }}"
+            },
+            {
+              "name": "StorageAccount__ConnectionString",
+              "value": "$STORAGE_CONN"
+            },
+            {
+              "name": "OPENAI_API_KEY",
+              "value": "${{ secrets.OPENAI_API_KEY }}"
+            },
+            {
+              "name": "WEATHER_API_KEY",
+              "value": "${{ secrets.WEATHER_API_KEY }}"
+            }
+          ]
+          EOF
+          
+          # Display the settings file (with sensitive data masked)
+          cat app_settings.json | sed 's/"value": ".*"/"value": "[MASKED]"/g'
+          
+          # Apply settings from the file
+          az webapp config appsettings set --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --settings @app_settings.json
           
           # Try to update python version if necessary
           echo "Setting Python version..."
