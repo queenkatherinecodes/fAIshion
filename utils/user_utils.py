@@ -1,3 +1,4 @@
+# utils/user_utils.py
 import hashlib
 import uuid
 from fastapi import HTTPException

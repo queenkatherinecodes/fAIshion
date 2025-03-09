@@ -1,3 +1,4 @@
+# utils/clothing_utils.py
 import uuid
 from fastapi import HTTPException
 from utils import db_utils
