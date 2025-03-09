@@ -100,18 +100,31 @@ jobs:
           # Set app settings for your Azure services - modify as needed for your application
           
           # SQL Database connection
-          SQL_SERVER_FQDN=$(az sql server show --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.SQL_SERVER_NAME }} --query fullyQualifiedDomainName -o tsv 2>/dev/null || echo "")
-          if [ ! -z "$SQL_SERVER_FQDN" ]; then
-            SQL_CONNECTION="Server=tcp:$SQL_SERVER_FQDN,1433;Database=${{ env.SQL_DB_NAME }};User ID=${{ env.SQL_ADMIN_USER }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};Encrypt=true;Connection Timeout=30;"
-            az webapp config connection-string set \
-              --resource-group ${{ env.RESOURCE_GROUP }} \
-              --name ${{ env.WEBAPP_NAME }} \
-              --connection-string-type SQLAzure \
-              --settings DefaultConnection="$SQL_CONNECTION"
+          echo "Checking SQL Server..."
+          SQL_SERVER_EXISTS=$(az sql server list --resource-group ${{ env.RESOURCE_GROUP }} --query "[?name=='${{ env.SQL_SERVER_NAME }}'].name" -o tsv)
+          
+          if [ ! -z "$SQL_SERVER_EXISTS" ]; then
+            echo "SQL Server exists. Fetching FQDN..."
+            SQL_SERVER_FQDN=$(az sql server show --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.SQL_SERVER_NAME }} --query fullyQualifiedDomainName -o tsv)
+            
+            if [ ! -z "$SQL_SERVER_FQDN" ]; then
+              echo "Setting SQL connection string as app setting instead of connection string..."
+              # Use app settings instead of connection strings to avoid escaping issues
+              CONNECTION_STRING="Server=tcp:${SQL_SERVER_FQDN},1433;Database=${{ env.SQL_DB_NAME }};User ID=${{ env.SQL_ADMIN_USER }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};Encrypt=true;Connection Timeout=30;"
+              
+              az webapp config appsettings set \
+                --resource-group ${{ env.RESOURCE_GROUP }} \
+                --name ${{ env.WEBAPP_NAME }} \
+                --settings "ConnectionStrings__DefaultConnection=$CONNECTION_STRING"
+            else
+              echo "Could not fetch SQL Server FQDN. Skipping SQL configuration."
+            fi
+          else
+            echo "SQL Server does not exist. Skipping SQL configuration."
           fi
           
           # Storage account connection
-          STORAGE_CONNECTION=$(az storage account show-connection-string --name ${{ env.STORAGE_ACCOUNT_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} --query connectionString -o tsv)
+          STORAGE_CONNECTION=$(az storage account show-connection-string --name ${{ env.STORAGE_ACCOUNT_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} --query connectionString -o tsv 2>/dev/null || echo "")
           if [ ! -z "$STORAGE_CONNECTION" ]; then
             az webapp config appsettings set --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEBAPP_NAME }} --settings "StorageAccount:ConnectionString=$STORAGE_CONNECTION"
             az webapp config appsettings set --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEBAPP_NAME }} --settings "StorageAccount:WardrobeContainer=${{ env.WARDROBE_CONTAINER }}"
