@@ -162,13 +162,15 @@ jobs:
             "WEBSITE_RUN_FROM_PACKAGE=1" \
             "SCM_DO_BUILD_DURING_DEPLOYMENT=true"
           
-          # Get storage connection string and set directly
-          echo "Setting storage connection settings..."
-          STORAGE_CONNECTION=$(az storage account show-connection-string --name ${{ env.STORAGE_ACCOUNT_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} --query connectionString -o tsv)
+          # Set storage connection settings using direct key approach
+          echo "Setting storage connection settings using storage keys..."
+          STORAGE_KEY=$(az storage account keys list --resource-group ${{ env.RESOURCE_GROUP }} --account-name ${{ env.STORAGE_ACCOUNT_NAME }} --query "[0].value" -o tsv)
           
-          # Apply connection string directly without using a file
-          az webapp config appsettings set --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --settings \
-            "StorageAccount:ConnectionString=$STORAGE_CONNECTION"
+          # Build a connection string manually
+          CONN_STRING="DefaultEndpointsProtocol=https;AccountName=${{ env.STORAGE_ACCOUNT_NAME }};AccountKey=$STORAGE_KEY;EndpointSuffix=core.windows.net"
+          
+          # Set the connection string
+          az webapp config appsettings set --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --settings "StorageAccount:ConnectionString=$CONN_STRING"
           
           # Set the container settings separately
           az webapp config appsettings set --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --settings \
@@ -184,11 +186,12 @@ jobs:
           # Try to update python version if necessary
           echo "Setting Python version..."
           az webapp config set --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --linux-fx-version "PYTHON|3.9" || true
-            - name: Get Web App URL
-              id: get_webapp_url
-              run: |
-                WEB_APP_URL=$(az webapp show --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --query defaultHostName -o tsv)
-                echo "::set-output name=url::https://$WEB_APP_URL"
+          
+      - name: Get Web App URL
+        id: get_webapp_url
+        run: |
+          WEB_APP_URL=$(az webapp show --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --query defaultHostName -o tsv)
+          echo "::set-output name=url::https://$WEB_APP_URL"
           
   deploy-application:
     needs: setup-infrastructure
