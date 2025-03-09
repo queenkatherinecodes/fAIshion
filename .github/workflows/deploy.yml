@@ -166,10 +166,19 @@ jobs:
           echo "Setting storage connection settings..."
           STORAGE_CONNECTION=$(az storage account show-connection-string --name ${{ env.STORAGE_ACCOUNT_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} --query connectionString -o tsv || echo "")
           if [ ! -z "$STORAGE_CONNECTION" ]; then
+            # Store connection string in a temporary JSON file
+            echo '{"StorageAccount:ConnectionString": "'"$STORAGE_CONNECTION"'"}' > storage_settings.json
+            
+            # Apply connection string from file
+            az webapp config appsettings set --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --settings @storage_settings.json
+            
+            # Set the container settings separately
             az webapp config appsettings set --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --settings \
-              "StorageAccount:ConnectionString=$STORAGE_CONNECTION" \
               "StorageAccount:WardrobeContainer=${{ env.WARDROBE_CONTAINER }}" \
               "StorageAccount:OutfitsContainer=${{ env.OUTFITS_CONTAINER }}"
+            
+            # Clean up temporary file
+            rm storage_settings.json
           else
             echo "Warning: Could not retrieve storage connection string"
           fi
