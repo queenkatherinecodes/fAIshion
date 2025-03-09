@@ -1,4 +1,6 @@
-fastapi==0.95.0
-uvicorn==0.21.1
-pyodbc==4.0.35
-python-dotenv==1.0.0
+fastapi>=0.68.0
+uvicorn>=0.15.0
+gunicorn>=20.1.0
+pyodbc>=4.0.32
+pydantic>=1.8.0
+python-multipart>=0.0.5

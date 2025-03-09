@@ -172,3 +172,9 @@ cython_debug/
 
 # ignore venv files (result of calling python -m venv fAIshion | source fAIshion/bin/activate)
 fAIshion/*
+
+# ignore dev settings
+.vscode/*
+
+# ignore .zip for deployment
+*.zip
