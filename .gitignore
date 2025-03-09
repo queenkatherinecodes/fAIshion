@@ -177,4 +177,4 @@ fAIshion/*
 .vscode/*
 
 # ignore local sqlite db data
-data/faishion.db
+faishion.db

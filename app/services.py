@@ -1,16 +1,17 @@
 # app/services.py
 import requests
+import os
 from openai import OpenAI
 from transformers import pipeline
 from PIL import Image
-from app.config import WEATHER_API_KEY, OPENAI_API_KEY
+from app.config import WEATHER_API_KEY
 import logging  # added import for logging
 
 logger = logging.getLogger(__name__)  # initialize logger
 
 # Initialize OpenAI and the image captioning pipeline
 client = OpenAI(
-    api_key=OPENAI_API_KEY, 
+    api_key=os.getenv("OPENAI_API_KEY"), 
 )
 captioner = pipeline("image-to-text", model="nlpconnect/vit-gpt2-image-captioning")
 
@@ -72,7 +73,7 @@ def get_outfit_suggestion(clothing_descriptions: str, occasion: str, age: int, s
         "Shoes: <your suggestion for shoes>\n"
     )
     try:
-        response = client.chat.completions.create(
+        completion = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are a helpful fashion stylist."},
@@ -81,7 +82,7 @@ def get_outfit_suggestion(clothing_descriptions: str, occasion: str, age: int, s
             max_tokens=150,
             temperature=0.7
         )
-        raw_suggestion = response["choices"][0]["message"]["content"].strip()
+        raw_suggestion = completion.choices[0].message.content.strip()
         # Normalize the output: remove extra spaces and ensure one line per label.
         lines = raw_suggestion.splitlines()
         normalized_lines = [line.strip() for line in lines if line.strip()]
