@@ -25,12 +25,12 @@ def fetch_weather(location: str) -> dict:
     }
     response = requests.get(weather_url, params=params)
     if response.status_code != 200:
-        logger.error(f"Failed to fetch weather for {location}: {response.text}")  # added logging
+        logger.error(f"Failed to fetch weather for {location}: {response.text}") 
         raise Exception(f"Failed to fetch weather: {response.text}")
     weather_data = response.json()
     temperature = weather_data.get("main", {}).get("temp")
     description = weather_data.get("weather", [{}])[0].get("description", "No description available")
-    logger.info(f"Weather fetched for {location}: {temperature}°C, {description}")  # added logging
+    logger.info(f"Weather fetched for {location}: {temperature}°C, {description}")
     return {"temperature": temperature, "description": description}
 
 def caption_image(file) -> str:
@@ -41,10 +41,10 @@ def caption_image(file) -> str:
         image = Image.open(file)
         file.seek(0)  # Reset file pointer for further use if needed
         caption_output = captioner(image)
-        logger.info("Image caption generated")  # added logging
+        logger.info("Image caption generated")
         return caption_output[0]['generated_text']
     except Exception as e:
-        logger.error(f"Caption image error: {str(e)}")  # added logging
+        logger.error(f"Caption image error: {str(e)}")
         return f"Unable to generate caption: {str(e)}"
 
 def get_outfit_suggestion(clothing_descriptions: str, occasion: str, age: int, style_preferences: str,
