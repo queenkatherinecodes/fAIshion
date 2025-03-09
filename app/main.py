@@ -13,7 +13,7 @@ import logging  # added import for logging
 logger = logging.getLogger(__name__)  # initialize logger
 
 # Initialize FastAPI app
-app = FastAPI(title="fAIshion API", description="Fashion API with Database Setup")
+app = FastAPI(title="fAIshion API", description="Fashion API with SQLite Database")
 
 # Enable CORS
 app.add_middleware(
@@ -38,13 +38,22 @@ async def hello_world():
 
 @app.get("/health")
 async def health():
-    db_status = db_utils.check_db_connection()
-    
-    return {
-        "status": "healthy",
-        "database_status": db_status["status"],
-        "error": db_status.get("error_message", None)
-    }
+    try:
+        print("Health check requested")
+        db_status = db_utils.check_db_connection()
+        print(f"DB status: {db_status}")
+        
+        return {
+            "status": "healthy",
+            "database_status": db_status["status"],
+            "error": db_status.get("error_message", None)
+        }
+    except Exception as e:
+        print(f"Health check error: {str(e)}")
+        return {
+            "status": "error",
+            "message": f"Health check failed: {str(e)}"
+        }
 
 # Add tables endpoint to check if tables are created
 @app.get("/tables")
@@ -143,10 +152,8 @@ async def suggest_outfit(
       - The provided occasion, age, style preferences, and current weather
     """
     try:
-        """"
-        clothing_items = clothing_utils.get_all_clothing_descriptions()"
-        """""
-        clothing_items = ["Red T-Shirt", "Blue Jeans", "Green Hoodie"]
+        
+        clothing_items = clothing_utils.get_all_clothing_descriptions()
     except Exception as e:
         return {"error": "Failed to fetch clothing items", "details": str(e)}
 

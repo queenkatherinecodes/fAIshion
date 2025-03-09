@@ -1,31 +1,21 @@
 # utils/db_utils.py
 import os
-import pyodbc
+import sqlite3
 from fastapi import HTTPException
 
-# Get database connection string from environment
-DATABASE_SERVER = os.getenv("SQL_SERVER", "faishion-dev-sql.database.windows.net")
-DATABASE_NAME = os.getenv("SQL_DATABASE", "faishionDb")
-DATABASE_USER = os.getenv("SQL_USER", "faishionadmin")
-DATABASE_PASSWORD = os.getenv("SQL_PASSWORD", "Fai$hion2025Complex!Pwd")
+# Set the database file path
+DATABASE_PATH = os.getenv("SQLITE_DB_PATH", "faishion.db")
 
 def get_db_connection():
     """
-    Creates and returns a database connection using the connection string from environment
+    Creates and returns a database connection to SQLite
     """
     try:
-        # First try to get the connection string from environment variables
-        connection_string = os.getenv("SQLCONNSTR_DefaultConnection")
-        
-        # If not found, fall back to individual components (for local development)
-        if not connection_string:
-            DATABASE_SERVER = os.getenv("SQL_SERVER", "faishion-dev-sql.database.windows.net")
-            DATABASE_NAME = os.getenv("SQL_DATABASE", "faishionDb")
-            DATABASE_USER = os.getenv("SQL_USER", "faishionadmin")
-            DATABASE_PASSWORD = os.getenv("SQL_PASSWORD", "Fai$hion2025Complex!Pwd")
-            connection_string = f"DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={DATABASE_SERVER};DATABASE={DATABASE_NAME};UID={DATABASE_USER};PWD={DATABASE_PASSWORD}"
-        
-        conn = pyodbc.connect(connection_string)
+        conn = sqlite3.connect(DATABASE_PATH)
+        # Enable foreign keys support
+        conn.execute("PRAGMA foreign_keys = ON")
+        # Return dictionary-like rows
+        conn.row_factory = sqlite3.Row
         return conn
     except Exception as e:
         print(f"Database connection error: {str(e)}")
@@ -41,19 +31,11 @@ def create_users_table():
     try:
         print("Creating Users table...")
         cursor.execute("""
-        IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Users')
-        BEGIN
-            CREATE TABLE Users (
-                id VARCHAR(36) PRIMARY KEY,
-                username VARCHAR(50) NOT NULL UNIQUE,
-                password VARCHAR(100) NOT NULL
-            )
-            PRINT 'Users table created'
-        END
-        ELSE
-        BEGIN
-            PRINT 'Users table already exists'
-        END
+        CREATE TABLE IF NOT EXISTS Users (
+            id TEXT PRIMARY KEY,
+            username TEXT NOT NULL UNIQUE,
+            password TEXT NOT NULL
+        )
         """)
         conn.commit()
         print("Users table creation successful")
@@ -73,113 +55,73 @@ def create_clothing_tables():
     tables = [
         # Tops table
         """
-        IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Tops')
-        BEGIN
-            CREATE TABLE Tops (
-                id VARCHAR(36) PRIMARY KEY,
-                userId VARCHAR(36) NOT NULL,
-                description VARCHAR(500),
-                color VARCHAR(50),
-                season VARCHAR(20),
-                occasion VARCHAR(50),
-                imageUrl VARCHAR(255),
-                FOREIGN KEY (userId) REFERENCES Users(id)
-            )
-            PRINT 'Tops table created'
-        END
-        ELSE
-        BEGIN
-            PRINT 'Tops table already exists'
-        END
+        CREATE TABLE IF NOT EXISTS Tops (
+            id TEXT PRIMARY KEY,
+            userId TEXT NOT NULL,
+            description TEXT,
+            color TEXT,
+            season TEXT,
+            occasion TEXT,
+            imageUrl TEXT,
+            FOREIGN KEY (userId) REFERENCES Users(id)
+        )
         """,
         
         # Bottoms table
         """
-        IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Bottoms')
-        BEGIN
-            CREATE TABLE Bottoms (
-                id VARCHAR(36) PRIMARY KEY,
-                userId VARCHAR(36) NOT NULL,
-                description VARCHAR(500),
-                color VARCHAR(50),
-                season VARCHAR(20),
-                occasion VARCHAR(50),
-                imageUrl VARCHAR(255),
-                FOREIGN KEY (userId) REFERENCES Users(id)
-            )
-            PRINT 'Bottoms table created'
-        END
-        ELSE
-        BEGIN
-            PRINT 'Bottoms table already exists'
-        END
+        CREATE TABLE IF NOT EXISTS Bottoms (
+            id TEXT PRIMARY KEY,
+            userId TEXT NOT NULL,
+            description TEXT,
+            color TEXT,
+            season TEXT,
+            occasion TEXT,
+            imageUrl TEXT,
+            FOREIGN KEY (userId) REFERENCES Users(id)
+        )
         """,
         
         # Dresses table
         """
-        IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Dresses')
-        BEGIN
-            CREATE TABLE Dresses (
-                id VARCHAR(36) PRIMARY KEY,
-                userId VARCHAR(36) NOT NULL,
-                description VARCHAR(500),
-                color VARCHAR(50),
-                season VARCHAR(20),
-                occasion VARCHAR(50),
-                length VARCHAR(20),
-                imageUrl VARCHAR(255),
-                FOREIGN KEY (userId) REFERENCES Users(id)
-            )
-            PRINT 'Dresses table created'
-        END
-        ELSE
-        BEGIN
-            PRINT 'Dresses table already exists'
-        END
+        CREATE TABLE IF NOT EXISTS Dresses (
+            id TEXT PRIMARY KEY,
+            userId TEXT NOT NULL,
+            description TEXT,
+            color TEXT,
+            season TEXT,
+            occasion TEXT,
+            length TEXT,
+            imageUrl TEXT,
+            FOREIGN KEY (userId) REFERENCES Users(id)
+        )
         """,
         
         # Shoes table
         """
-        IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Shoes')
-        BEGIN
-            CREATE TABLE Shoes (
-                id VARCHAR(36) PRIMARY KEY,
-                userId VARCHAR(36) NOT NULL,
-                description VARCHAR(500),
-                color VARCHAR(50),
-                type VARCHAR(50),
-                occasion VARCHAR(50),
-                imageUrl VARCHAR(255),
-                FOREIGN KEY (userId) REFERENCES Users(id)
-            )
-            PRINT 'Shoes table created'
-        END
-        ELSE
-        BEGIN
-            PRINT 'Shoes table already exists'
-        END
+        CREATE TABLE IF NOT EXISTS Shoes (
+            id TEXT PRIMARY KEY,
+            userId TEXT NOT NULL,
+            description TEXT,
+            color TEXT,
+            type TEXT,
+            occasion TEXT,
+            imageUrl TEXT,
+            FOREIGN KEY (userId) REFERENCES Users(id)
+        )
         """,
         
         # Accessories table
         """
-        IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Accessories')
-        BEGIN
-            CREATE TABLE Accessories (
-                id VARCHAR(36) PRIMARY KEY,
-                userId VARCHAR(36) NOT NULL,
-                description VARCHAR(500),
-                type VARCHAR(50),
-                color VARCHAR(50),
-                occasion VARCHAR(50),
-                imageUrl VARCHAR(255),
-                FOREIGN KEY (userId) REFERENCES Users(id)
-            )
-            PRINT 'Accessories table created'
-        END
-        ELSE
-        BEGIN
-            PRINT 'Accessories table already exists'
-        END
+        CREATE TABLE IF NOT EXISTS Accessories (
+            id TEXT PRIMARY KEY,
+            userId TEXT NOT NULL,
+            description TEXT,
+            type TEXT,
+            color TEXT,
+            occasion TEXT,
+            imageUrl TEXT,
+            FOREIGN KEY (userId) REFERENCES Users(id)
+        )
         """
     ]
     
@@ -225,9 +167,8 @@ def get_tables():
     
     try:
         cursor.execute("""
-        SELECT TABLE_NAME 
-        FROM INFORMATION_SCHEMA.TABLES
-        WHERE TABLE_TYPE = 'BASE TABLE'
+        SELECT name FROM sqlite_master 
+        WHERE type='table' AND name NOT LIKE 'sqlite_%'
         """)
         
         tables = [row[0] for row in cursor.fetchall()]
@@ -241,13 +182,27 @@ def check_db_connection():
     """
     Check if database connection is working
     """
+    print("Checking database connection...")
     try:
+        # First check if the database file exists
+        if os.path.exists(DATABASE_PATH):
+            print(f"Database file exists at {DATABASE_PATH}")
+        else:
+            print(f"Database file does not exist at {DATABASE_PATH}")
+            return {"status": "error", "error_message": f"Database file not found at {DATABASE_PATH}"}
+        
+        # Try to open a connection
+        print("Attempting to connect to database...")
         conn = get_db_connection()
+        print("Connection established, executing test query...")
+        
         cursor = conn.cursor()
         cursor.execute("SELECT 1")
         result = cursor.fetchone()
         conn.close()
         
+        print(f"Query result: {result}")
         return {"status": "connected" if result and result[0] == 1 else "error"}
     except Exception as e:
+        print(f"Database connection error: {str(e)}")
         return {"status": "error", "error_message": str(e)}
