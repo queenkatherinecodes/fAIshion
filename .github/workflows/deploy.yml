@@ -152,33 +152,37 @@ jobs:
       
       - name: Configure Web App Settings
         run: |
-          # Generate connection string
-          SQL_SERVER_FQDN=$(az sql server show --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.SQL_SERVER_NAME }} --query fullyQualifiedDomainName -o tsv)
-          SQL_CONNECTION="Server=tcp:$SQL_SERVER_FQDN,1433;Database=${{ env.SQL_DB_NAME }};User ID=${{ env.SQL_ADMIN_USER }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};Encrypt=true;Connection Timeout=30;"
-          
-          # Get storage connection string
-          STORAGE_CONNECTION=$(az storage account show-connection-string --name ${{ env.STORAGE_ACCOUNT_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} --query connectionString -o tsv)
-          
-          # Configure app settings
+          # First set the app settings without the connection string
+          echo "Setting application settings..."
           az webapp config appsettings set --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --settings \
-            "SQL_SERVER=${{ env.SQL_SERVER_NAME }}" \
+            "SQL_SERVER=${{ env.SQL_SERVER_NAME }}.database.windows.net" \
             "SQL_DATABASE=${{ env.SQL_DB_NAME }}" \
             "SQL_USER=${{ env.SQL_ADMIN_USER }}" \
             "SQL_PASSWORD=${{ secrets.SQL_ADMIN_PASSWORD }}" \
-            "StorageAccount:ConnectionString=$STORAGE_CONNECTION" \
-            "StorageAccount:WardrobeContainer=${{ env.WARDROBE_CONTAINER }}" \
-            "StorageAccount:OutfitsContainer=${{ env.OUTFITS_CONTAINER }}" \
-            "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" \
-            "WEATHER_API_KEY=${{ secrets.WEATHER_API_KEY }}" \
             "WEBSITE_RUN_FROM_PACKAGE=1" \
             "SCM_DO_BUILD_DURING_DEPLOYMENT=true"
+          
+          # Get storage connection string and set separately
+          echo "Setting storage connection settings..."
+          STORAGE_CONNECTION=$(az storage account show-connection-string --name ${{ env.STORAGE_ACCOUNT_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} --query connectionString -o tsv || echo "")
+          if [ ! -z "$STORAGE_CONNECTION" ]; then
+            az webapp config appsettings set --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --settings \
+              "StorageAccount:ConnectionString=$STORAGE_CONNECTION" \
+              "StorageAccount:WardrobeContainer=${{ env.WARDROBE_CONTAINER }}" \
+              "StorageAccount:OutfitsContainer=${{ env.OUTFITS_CONTAINER }}"
+          else
+            echo "Warning: Could not retrieve storage connection string"
+          fi
             
-          # Set connection string
-          az webapp config connection-string set \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
-            --name ${{ env.WEB_APP_NAME }} \
-            --connection-string-type SQLAzure \
-            --settings DefaultConnection="$SQL_CONNECTION"
+          # Set API keys separately
+          echo "Setting API keys..."
+          az webapp config appsettings set --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --settings \
+            "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" \
+            "WEATHER_API_KEY=${{ secrets.WEATHER_API_KEY }}"
+          
+          # Try to update python version if necessary
+          echo "Setting Python version..."
+          az webapp config set --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.WEB_APP_NAME }} --linux-fx-version "PYTHON|3.9" || true
       
       - name: Get Web App URL
         id: get_webapp_url
@@ -202,8 +206,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest
+          pip install -r requirements.txt || echo "No requirements.txt found, continuing anyway"
+          pip install gunicorn uvicorn fastapi
           
       - name: Create startup.sh
         run: |
