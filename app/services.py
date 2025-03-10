@@ -196,8 +196,13 @@ def generate_outfit_avatar(outfit_suggestion: str, user_id: str = None, gender: 
     # Remove trailing comma and space
     outfit_description = outfit_description.rstrip(", ")
     
-    # Check if we have a user photo
-    user_photo = None if user_id is None else get_user_photo_as_base64(user_id)
+    # Determine if we have a user photo
+    user_photo = None
+    if user_id is not None:
+        possible_path = f"uploads/{user_id}.png"
+        if os.path.exists(possible_path):
+            user_photo = possible_path
+            mask_photo = possible_path.replace(".png", "_mask.png")
     
     try:
         # Create the prompt based on whether we have a user photo
@@ -209,16 +214,18 @@ def generate_outfit_avatar(outfit_suggestion: str, user_id: str = None, gender: 
                 f"with the outfit clearly visible. Style should be realistic but slightly stylized, "
                 f"like a fashion app illustration."
             )
-            
+
+
             # Generate the image using DALL-E with the user photo included
-            response = client.images.generate(
-                model="dall-e-3",
+            response = client.images.edit(
+                model="dall-e-2",
+                image=open(user_photo, "rb"),
+                mask=open(mask_photo, "rb"),
                 prompt=prompt,
                 n=1,
                 size="1024x1024",
-                response_format="b64_json",
-                user_image=user_photo
             )
+
         else:
             # Use a store mannequin as fallback
             mannequin_type = "neutral store mannequin"
@@ -240,17 +247,12 @@ def generate_outfit_avatar(outfit_suggestion: str, user_id: str = None, gender: 
                 prompt=prompt,
                 n=1,
                 size="1024x1024",
-                response_format="b64_json"
+                quality="standard"
             )
         
         # Get the base64-encoded image data
-        image_b64 = response.data[0].b64_json
-        
-        # Create a data URL
-        image_data_url = f"data:image/png;base64,{image_b64}"
-        
-        logger.info("Avatar generated successfully")
-        return image_data_url
+        print(response.data[0].url)
+        return response.data[0].url
         
     except Exception as e:
         logger.error(f"Avatar generation error: {str(e)}")

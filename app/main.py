@@ -193,36 +193,10 @@ async def suggest_outfit_with_avatar(
     except Exception as e:
         return {"error": "Failed to get outfit with avatar", "details": str(e)}
     
-    # Save the avatar image to a file if it exists and is in base64 format
-    avatar_image_path = None
-    if "avatar_image" in result and isinstance(result["avatar_image"], str) and result["avatar_image"].startswith("data:image"):
-        try:
-            # Extract the base64 data (remove the data:image/png;base64, prefix)
-            image_data = result["avatar_image"].split(",")[1]
-            
-            # Create output directory if it doesn't exist
-            os.makedirs("output_avatars", exist_ok=True)
-            
-            # Create a filename with timestamp to avoid overwriting
-            timestamp = int(time.time())
-            filename = f"{outfitRequest.userId}_{timestamp}.png"
-            image_path = os.path.join("output_avatars", filename)
-            
-            # Save to file
-            with open(image_path, "wb") as f:
-                f.write(base64.b64decode(image_data))
-            
-            logger.info(f"Avatar image saved to {image_path}")
-            avatar_image_path = image_path
-            
-        except Exception as e:
-            logger.error(f"Error saving avatar image: {str(e)}")
-            # Don't fail the whole request if just the file saving fails
-            avatar_image_path = f"Error saving image: {str(e)}"
 
     return {
         "weather": weather,
         "clothing_items": clothing_items,
         "outfit_suggestion": result["outfit_suggestion"],
-        "avatar_image_path": avatar_image_path
+        "avatar_image_path": result["avatar_image"]
     }
